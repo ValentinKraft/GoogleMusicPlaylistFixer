@@ -32,3 +32,5 @@ The PlaylistFixer just tries to fix the playlist and won’t upload any files (y
 Python C:\GoogleMusicPlaylistFixer\PlaylistFixer.py
 ```
 - The PlaylistFixer will now fill all Google Music playlists he can assign to one of your iTunes playlists with the right tracks.
+
+*For more information visit www.valentinkraft.de*
