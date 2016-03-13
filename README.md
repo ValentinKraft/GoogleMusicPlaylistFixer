@@ -4,7 +4,7 @@
 
 This little program fixes some issues I came across when using the Google Play Music Manager to upload my iTunes playlists. I use Google Play Music for an online-version of my local iTunes media library. The Music Manager offers some functionality to upload and transfer your iTunes playlists to Google Play Music. Unfortunately the Music Manager messed up the playlists, always adding entries to the playlists which resulted in huge playlists containing a lot of duplicates of the songs.
 
-The Playlist Fixer fixes this issues using a brute force approach: deleting the contents of every playlist and again adding all entries. To get access to Google Play Music, the Playlist Fixer uses the gmusicapi from Simon Weber. To export the local iTunes playlists I used the iTunes Export program by Eric Daugherty.
+The Playlist Fixer fixes this issues using a brute force approach: deleting the contents of every playlist and again adding all entries. To get access to Google Play Music, the Playlist Fixer uses the gmusicapi from Simon Weber (https://github.com/simon-weber/gmusicapi). To export the local iTunes playlists I used the iTunes Export program by Eric Daugherty (http://www.ericdaugherty.com/dev/itunesexport/).
 
 Please note that this is just a hobby project and I won’t take any responsibility for possible damage of your hard- or software. Furthermore this is still a work in progress and will be further developed in the future.
 
