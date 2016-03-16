@@ -11,12 +11,35 @@ from gmusicapi import Mobileclient
 from subprocess import check_call
 from mutagen.mp3 import EasyMP3 as MP3
 import os
+import sys
 from os.path import expanduser
 from colorama import Fore, Back, init, Style
 
+# ///////////////// Helper classes /////////////////
+# //////////////////////////////////////////////////
+
+class Tee(object):
+    def __init__(self, *files):
+        self.files = files
+    def write(self, obj):
+        for f in self.files:
+            f.write(obj)
+            f.flush()
+    def flush(self) :
+        for f in self.files:
+            f.flush()
 
 # //////////////// Helper functions ////////////////
 # //////////////////////////////////////////////////
+
+def init_logger():
+    global log_file
+    log_file = open("log.txt","w")
+    sys.stdout = Tee(sys.stdout, log_file)
+
+def end_logger():
+    sys.stdout = sys.__stdout__
+    log_file.close()
 
 def ask_for_credentials():
     """Make an instance of the api and attempts to login with it.
@@ -43,7 +66,7 @@ def ask_for_credentials():
 
     return api
 
-def loadLocalPlaylist(filepath):
+def load_local_playlist(filepath):
     """Loads the playlist file in the given directory, giving back a list of MP3 file paths."""
     mp3List = list()
     file = open(filepath, encoding="utf-8", mode='r')
@@ -59,7 +82,7 @@ def loadLocalPlaylist(filepath):
 
     return mp3List
 
-def exportiTunesPlaylists(exportPath):
+def export_itunes_playlists(exportPath):
     print("Calling iTunesExport ...")
     print("-----------------------------------------------------")
     try:
@@ -68,7 +91,7 @@ def exportiTunesPlaylists(exportPath):
         print("Problem exporting iTunes Playlists! Please install iTunesExport Console from http://www.ericdaugherty.com/dev/itunesexport/")
     print("-----------------------------------------------------")
 
-def giveTrackID(artist, title):
+def give_track_id(artist, title):
     """Gives the ID of the (last) track matching the given artists and song title. Returns 0 if no ID is found."""
     id = "0"
     for song in library:
@@ -77,7 +100,7 @@ def giveTrackID(artist, title):
             id = song['id']
     return id
 
-def givePlaylistID(name):
+def give_playlist_id(name):
     """Gives the ID of the (last) playlist matching the given name. Returns 0 if no ID is found."""
     id = "0"
     for pl in playlistsContent:
@@ -85,7 +108,7 @@ def givePlaylistID(name):
             id = pl['id']
     return id
 
-def clearAllPlaylists():
+def clear_all_playlists():
     """Deletes the content of every Google Music playlist."""
     for pl in playlistsContent:
         trackList=list()
@@ -93,12 +116,12 @@ def clearAllPlaylists():
             trackList.append(track['id'])
         mc.remove_entries_from_playlist(trackList)
 
-def fillPlaylists():
+def fill_playlists():
     """Appends the tracks to the right playlists based on the local playlist files. Assumes empty Google Music playlists. Fills only already existing Google Music playlists, doesn't create new playlists."""
     i = 0
     for pl in localPlaylists:
 
-        plID = givePlaylistID(localPlaylistNames[i])
+        plID = give_playlist_id(localPlaylistNames[i])
         if plID == "0":
                 print(Fore.YELLOW + "~~ Couldn't get ID for Playlist " + localPlaylistNames[i] + " - skipping")
                 i=i+1
@@ -116,7 +139,7 @@ def fillPlaylists():
                 continue
             #print(id3info['length'])
             try:
-                id = giveTrackID(id3info['artist'][0], id3info['title'][0])
+                id = give_track_id(id3info['artist'][0], id3info['title'][0])
             except:
                 print(Fore.YELLOW + "~~ ERROR retreaving Google Music ID for " + song + " - skipping")
                 continue
@@ -134,7 +157,7 @@ def fillPlaylists():
         print("Done.")
         print()
 
-def askUserToProceed(exportPath):
+def ask_user_to_proceed(exportPath):
     while True:
         print(Fore.RED + 'The content of your online playlists is about to be deleted. They will be replaced by the files in ' + exportPath + ".\n Please check if the names of the playlists in the directory match the online playlists.") 
         answer = input('Proceed? (Y/N)')
@@ -151,7 +174,9 @@ def askUserToProceed(exportPath):
 def main():
     """Fixes the Google Music playlists if they differ from the local iTunes playlists."""
 
+    # Initialization
     init(autoreset=True)
+    init_logger()
 
     print()
     print(Style.BRIGHT + '##########################################################')
@@ -181,10 +206,10 @@ def main():
     userPath = expanduser("~")
     exportPath = userPath + "\\GoogleMusicPlaylistFixerExport"
 
-    exportiTunesPlaylists(exportPath)
+    export_itunes_playlists(exportPath)
 
     for file in os.listdir(exportPath):
-        localPlaylists.append(loadLocalPlaylist(exportPath+"\\"+file))
+        localPlaylists.append(load_local_playlist(exportPath+"\\"+file))
         localPlaylistNames.append(file.split(".")[0])
     print(Fore.GREEN + "Done. Sucessfully processed " + str(len(localPlaylists)) + " iTunes playlists.")
     print()
@@ -210,7 +235,7 @@ def main():
         return
 
     # Ask user for permission
-    proceed = askUserToProceed(exportPath)
+    proceed = ask_user_to_proceed(exportPath)
     if(proceed == False):
         print("Aborting.")
         return
@@ -218,13 +243,14 @@ def main():
     # Fix Google Music library
     print(Style.BRIGHT + "/// Fixing library. ///////////////////////////////")
     print(Style.BRIGHT + '///////////////////////////////////////////////////')
-    clearAllPlaylists()
-    fillPlaylists()
+    clear_all_playlists()
+    fill_playlists()
    
     #TODO: delete m3u files?
 
     # End
     mc.logout()
+    end_logger()
     print()
     print(Fore.LIGHTGREEN_EX + '___________ Finished!')
     print()
