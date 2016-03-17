@@ -102,8 +102,8 @@ def export_itunes_playlists(exportPath):
     print("Calling iTunesExport ...")
     print("-----------------------------------------------------")
     try:
-        #check_call(['java', '-jar', 'C:\GoogleMusicPlaylistFixer\iTunesExport\itunesexport.jar', "-outputDir="+exportPath])
-        check_call(['java', '-jar', 'C:\Coding\!PROJECTS\GoogleMusicPlaylistFixer\iTunesExport\itunesexport.jar', "-outputDir="+exportPath])
+        check_call(['java', '-jar', 'C:\GoogleMusicPlaylistFixer\iTunesExport\itunesexport.jar', "-outputDir="+exportPath])
+        #check_call(['java', '-jar', 'C:\Coding\!PROJECTS\GoogleMusicPlaylistFixer\iTunesExport\itunesexport.jar', "-outputDir="+exportPath])
     except:
         print("Problem exporting iTunes Playlists! Please install iTunesExport Console from http://www.ericdaugherty.com/dev/itunesexport/")
     print("-----------------------------------------------------")
