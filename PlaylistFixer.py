@@ -8,38 +8,53 @@ from getpass import getpass
 
 from gmusicapi import Mobileclient
 
-from subprocess import check_call
-from mutagen.mp3 import EasyMP3 as MP3
 import os
 import sys
+import colorama
+import datetime
+from subprocess import check_call
+from mutagen.mp3 import EasyMP3 as MP3
 from os.path import expanduser
-from colorama import Fore, Back, init, Style
+from colorama import Fore, Back, Style
 
 # ///////////////// Helper classes /////////////////
 # //////////////////////////////////////////////////
 
 class Tee(object):
-    def __init__(self, *files):
-        self.files = files
-    def write(self, obj):
-        for f in self.files:
-            f.write(obj)
-            f.flush()
-    def flush(self) :
-        for f in self.files:
-            f.flush()
+    def __init__(self, log_fname, mode='a'):
+        self.log = open(log_fname, mode)
+
+    def __del__(self):
+        # Restore sin, so, se
+        sys.stdout = sys.__stdout__
+        sys.stdir = sys.__stdin__
+        sys.stderr = sys.__stderr__
+        self.log.close()
+
+    def write(self, data):
+        self.log.write(data)
+        self.log.flush()
+        sys.__stdout__.write(data)
+        sys.__stdout__.flush()
+
+    def readline(self):
+        s = sys.__stdin__.readline()
+        sys.__stdin__.flush()
+        self.log.write(s)
+        self.log.flush()
+        return s
+
+    def flush(foo):
+        return
 
 # //////////////// Helper functions ////////////////
 # //////////////////////////////////////////////////
 
 def init_logger():
-    global log_file
-    log_file = open("log.txt","w")
-    sys.stdout = Tee(sys.stdout, log_file)
+    sys.stdout = sys.stderr = sys.stdin = Tee("log"+str(datetime.datetime.now().time()).replace(":","_")+".txt", 'w')
 
 def end_logger():
     sys.stdout = sys.__stdout__
-    log_file.close()
 
 def ask_for_credentials():
     """Make an instance of the api and attempts to login with it.
@@ -52,17 +67,18 @@ def ask_for_credentials():
     logged_in = False
     attempts = 0
 
-    try:
-        logged_in = api.login("YourEmail", "YourPassword", Mobileclient.FROM_MAC_ADDRESS)
-    except:
-        print(Fore.YELLOW + "Error logging you in!")
+    #try:
+    #    logged_in = api.login("mail", "pass", Mobileclient.FROM_MAC_ADDRESS)
+    #except:
+    #    print(Fore.YELLOW + "Error logging you in!")
 
-    #while not logged_in and attempts < 3:
-    #    email = input('Email: ')
-    #    password = getpass()
+    while not logged_in and attempts < 3:
+        print("Please log in into your Google Play account.")
+        email = input('Email: ')
+        password = getpass()
 
-    #    logged_in = api.login(email, password, Mobileclient.FROM_MAC_ADDRESS)
-    #    attempts += 1
+        logged_in = api.login(email, password, Mobileclient.FROM_MAC_ADDRESS)
+        attempts += 1
 
     return api
 
@@ -86,17 +102,18 @@ def export_itunes_playlists(exportPath):
     print("Calling iTunesExport ...")
     print("-----------------------------------------------------")
     try:
-        check_call(['java', '-jar', 'C:\GoogleMusicPlaylistFixer\iTunesExport\itunesexport.jar', "-outputDir="+exportPath])
+        #check_call(['java', '-jar', 'C:\GoogleMusicPlaylistFixer\iTunesExport\itunesexport.jar', "-outputDir="+exportPath])
+        check_call(['java', '-jar', 'C:\Coding\!PROJECTS\GoogleMusicPlaylistFixer\iTunesExport\itunesexport.jar', "-outputDir="+exportPath])
     except:
         print("Problem exporting iTunes Playlists! Please install iTunesExport Console from http://www.ericdaugherty.com/dev/itunesexport/")
     print("-----------------------------------------------------")
 
-def give_track_id(artist, title):
+def give_track_id(artist, title, album):
     """Gives the ID of the (last) track matching the given artists and song title. Returns 0 if no ID is found."""
     id = "0"
     for song in library:
         #print (song['durationmillis'])
-        if song['title'] == title and song['artist'] == artist:
+        if (song['title'] == title and song['artist'] == artist) or (song['title'] == title and song['album'] == album):
             id = song['id']
     return id
 
@@ -139,7 +156,19 @@ def fill_playlists():
                 continue
             #print(id3info['length'])
             try:
-                id = give_track_id(id3info['artist'][0], id3info['title'][0])
+                try:
+                    artist = id3info['artist'][0]
+                except:
+                    artist = ""
+                try:
+                    title = id3info['title'][0]
+                except:
+                    title = ""
+                try:
+                    album = id3info['album'][0]
+                except:
+                    album = ""
+                id = give_track_id(artist,title,album)
             except:
                 print(Fore.YELLOW + "~~ ERROR retreaving Google Music ID for " + song + " - skipping")
                 continue
@@ -158,6 +187,7 @@ def fill_playlists():
         print()
 
 def ask_user_to_proceed(exportPath):
+    
     while True:
         print(Fore.RED + 'The content of your online playlists is about to be deleted. They will be replaced by the files in ' + exportPath + ".\n Please check if the names of the playlists in the directory match the online playlists.") 
         answer = input('Proceed? (Y/N)')
@@ -174,9 +204,7 @@ def ask_user_to_proceed(exportPath):
 def main():
     """Fixes the Google Music playlists if they differ from the local iTunes playlists."""
 
-    # Initialization
-    init(autoreset=True)
-    init_logger()
+    colorama.init(autoreset=True)
 
     print()
     print(Style.BRIGHT + '##########################################################')
@@ -185,9 +213,11 @@ def main():
     print("(c) 2016 by Valentin Kraft, www.valentinkraft.de")
     print()
 
-    # Start mobile client
+    # Start mobile client / Initialization
     global mc
     mc = ask_for_credentials()
+    init_logger()
+    colorama.init(autoreset=True)
     if not mc.is_authenticated():
         print("Sorry, those credentials weren't accepted.")
         return
