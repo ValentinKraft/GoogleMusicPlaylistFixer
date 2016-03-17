@@ -18,7 +18,6 @@ pip install colorama
 ```
 
 - Copy the files of the PlaylistFixer to C:\GoogleMusicPlaylistFixer\
-- Open the PlaylistFixer.py file with your editor and type in your Google Account details (Your E-Mail and Password) to the line „logged_in = api.login(„YourEmail“, „YourPassword“, Mobileclient.FROM_MAC_ADDRESS)“. Save the file.
 
 **How to use:**
 
